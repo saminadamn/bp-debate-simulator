@@ -60,7 +60,7 @@ function generateRealAdjudication(motion: string, speeches: Speech[], userRole: 
 
     if (!actualUserSpeech) {
       console.error("No non-AI speech found at all!")
-      return generateDefaultAdjudication()
+      return generateDefaultAdjudication(motion)
     }
   }
 
@@ -144,7 +144,7 @@ function analyzeSpeechQuality(speechContent: string) {
   // Calculate overall quality score
   analysis.qualityScore = Math.min(
     10,
-    (analysis.structureScore + analysis.evidenceScore + analysis.impactScore + analysis.clashScore) / 4,
+    (analysis.structureScore + analysis.evidenceScore + analysis.impactScore + analysis.clashScore) / 1.33,
   )
 
   console.log("Speech analysis complete:", analysis)
@@ -731,7 +731,17 @@ function getOrdinalSuffix(num: number): string {
   return suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]
 }
 
-function generateDefaultAdjudication() {
+function generateDefaultAdjudication(motion: string) {
+  // Generate 6 generic but topic-related feedback sentences
+  const genericSentences = [
+    `The topic "${motion}" involves important societal considerations.`,
+    `Effective argumentation should address the key aspects of the motion.`,
+    `Understanding the implications of "${motion}" is crucial for a strong case.`,
+    `Debaters should incorporate evidence and clear reasoning related to the topic.`,
+    `Engaging directly with opposing arguments helps clarify the core issues.`,
+    `Strategic weighing of arguments strengthens the overall position.`,
+  ]
+
   return {
     ranking: ["OG", "OO", "CG", "CO"],
     clashes: [],
@@ -744,7 +754,14 @@ function generateDefaultAdjudication() {
       rhetoricalEffectiveness: 5,
       strategicAwareness: 5,
     },
-    feedback: "Unable to analyze speech properly. Please try again.",
-    improvements: ["Ensure your speech is properly recorded and transcribed"],
+    feedback: genericSentences.join("\n"),
+    improvements: [
+      "Ensure your speech is properly recorded and transcribed",
+      "Work on structuring your arguments clearly",
+      "Use specific examples to strengthen your points",
+      "Engage with opposing arguments to improve clash",
+      "Practice clear signposting of your case",
+      "Develop strategic weighing to enhance your speech",
+    ],
   }
 }

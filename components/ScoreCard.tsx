@@ -19,20 +19,46 @@ interface ScoreCardProps {
   improvements: string[]
 }
 
-export default function ScoreCard({ performanceMetrics, overallScore, ranking, improvements }: ScoreCardProps) {
+export default function ScoreCard({
+  performanceMetrics,
+  overallScore,
+  ranking,
+  improvements,
+}: ScoreCardProps) {
   const getScoreColor = (score: number) => {
     if (score >= 8) return "text-green-600"
     if (score >= 6) return "text-yellow-600"
     return "text-red-600"
   }
 
-  const getScoreGrade = (score: number) => {
-    if (score >= 9) return "A+"
-    if (score >= 8) return "A"
-    if (score >= 7) return "B+"
-    if (score >= 6) return "B"
-    if (score >= 5) return "C+"
-    return "C"
+  const getScoreGrade = (score: number): string => {
+    // Because exact floating point equality can be tricky, to handle == 5.0:
+    // Use a small epsilon for safety around 5.0
+    const EPSILON = 0.0001
+    if (score >= 9 && score <= 10) {
+      return "A+"
+    }
+    if (score >= 8 && score < 9) {
+      return "A"
+    }
+    if (score >= 7 && score < 8) {
+      return "B"
+    }
+    if (score >= 6 && score < 7) {
+      return "C"
+    }
+    // Check if score is close enough to 5 to be considered exactly 5
+    if (Math.abs(score - 5) < EPSILON) {
+      return "E"
+    }
+    if (score > 5 && score < 6) {
+      return "D"
+    }
+    if (score < 5) {
+      return "F"
+    }
+    // As a fallback, if none above matched (shouldn't occur)
+    return "F"
   }
 
   const getRankingBadge = (rank: number) => {
@@ -48,11 +74,18 @@ export default function ScoreCard({ performanceMetrics, overallScore, ranking, i
     }
   }
 
+  // You multiply score by 3 before display as per your earlier requests.
+  // If you want to cap this displayed value at 10, uncomment the cap.
+  const displayedScore = (score: number) => {
+    const val = score * 3
+    return val > 10 ? 10 : val
+  }
+
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-2xl mx-auto" role="region" aria-label="Performance Score Card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Trophy className="h-5 w-5" />
+          <Trophy className="h-5 w-5" aria-hidden="true" />
           Performance Score Card
           {getRankingBadge(ranking)}
         </CardTitle>
@@ -60,86 +93,44 @@ export default function ScoreCard({ performanceMetrics, overallScore, ranking, i
       <CardContent className="space-y-6">
         {/* Overall Score */}
         <div className="text-center">
-          <div className={`text-4xl font-bold ${getScoreColor(overallScore)}`}>{overallScore.toFixed(1)}/10</div>
+          <div className={`text-4xl font-bold ${getScoreColor(overallScore)}`} aria-live="polite" aria-atomic="true">
+            {displayedScore(overallScore).toFixed(1)}/10
+          </div>
           <div className="text-lg font-semibold text-gray-600">Overall Grade: {getScoreGrade(overallScore)}</div>
         </div>
 
         {/* Detailed Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Brain className="h-4 w-4 text-blue-500" />
-              <span className="text-sm font-medium">Argument Quality</span>
-              <span className={`ml-auto font-bold ${getScoreColor(performanceMetrics.averageArgumentQuality)}`}>
-                {performanceMetrics.averageArgumentQuality.toFixed(1)}
-              </span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" role="list" aria-label="Performance Metrics">
+          {[
+            { label: "Argument Quality", value: performanceMetrics.averageArgumentQuality, icon: <Brain className="h-4 w-4 text-blue-500" aria-hidden="true" /> },
+            { label: "Clash Engagement", value: performanceMetrics.clashEngagement, icon: <Target className="h-4 w-4 text-red-500" aria-hidden="true" /> },
+            { label: "Structure", value: performanceMetrics.structuralCoherence, icon: <Users className="h-4 w-4 text-green-500" aria-hidden="true" /> },
+            { label: "Evidence Usage", value: performanceMetrics.evidenceUsage, icon: <Star className="h-4 w-4 text-purple-500" aria-hidden="true" /> },
+            { label: "Rhetorical Style", value: performanceMetrics.rhetoricalEffectiveness, icon: <Zap className="h-4 w-4 text-orange-500" aria-hidden="true" /> },
+            { label: "Strategic Awareness", value: performanceMetrics.strategicAwareness, icon: <Brain className="h-4 w-4 text-indigo-500" aria-hidden="true" /> },
+          ].map(({ label, value, icon }, idx) => (
+            <div key={idx} className="space-y-3" role="listitem">
+              <div className="flex items-center gap-2">
+                {icon}
+                <span className="text-sm font-medium">{label}</span>
+                <span className={`ml-auto font-bold ${getScoreColor(value)}`} aria-label={`${label} score: ${displayedScore(value).toFixed(1)}`}>
+                  {displayedScore(value).toFixed(1)}
+                </span>
+              </div>
+              <Progress value={value * 10} className="h-2" />
             </div>
-            <Progress value={performanceMetrics.averageArgumentQuality * 10} className="h-2" />
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Target className="h-4 w-4 text-red-500" />
-              <span className="text-sm font-medium">Clash Engagement</span>
-              <span className={`ml-auto font-bold ${getScoreColor(performanceMetrics.clashEngagement)}`}>
-                {performanceMetrics.clashEngagement.toFixed(1)}
-              </span>
-            </div>
-            <Progress value={performanceMetrics.clashEngagement * 10} className="h-2" />
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-green-500" />
-              <span className="text-sm font-medium">Structure</span>
-              <span className={`ml-auto font-bold ${getScoreColor(performanceMetrics.structuralCoherence)}`}>
-                {performanceMetrics.structuralCoherence.toFixed(1)}
-              </span>
-            </div>
-            <Progress value={performanceMetrics.structuralCoherence * 10} className="h-2" />
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Star className="h-4 w-4 text-purple-500" />
-              <span className="text-sm font-medium">Evidence Usage</span>
-              <span className={`ml-auto font-bold ${getScoreColor(performanceMetrics.evidenceUsage)}`}>
-                {performanceMetrics.evidenceUsage.toFixed(1)}
-              </span>
-            </div>
-            <Progress value={performanceMetrics.evidenceUsage * 10} className="h-2" />
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4 text-orange-500" />
-              <span className="text-sm font-medium">Rhetorical Style</span>
-              <span className={`ml-auto font-bold ${getScoreColor(performanceMetrics.rhetoricalEffectiveness)}`}>
-                {performanceMetrics.rhetoricalEffectiveness.toFixed(1)}
-              </span>
-            </div>
-            <Progress value={performanceMetrics.rhetoricalEffectiveness * 10} className="h-2" />
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Brain className="h-4 w-4 text-indigo-500" />
-              <span className="text-sm font-medium">Strategic Awareness</span>
-              <span className={`ml-auto font-bold ${getScoreColor(performanceMetrics.strategicAwareness)}`}>
-                {performanceMetrics.strategicAwareness.toFixed(1)}
-              </span>
-            </div>
-            <Progress value={performanceMetrics.strategicAwareness * 10} className="h-2" />
-          </div>
+          ))}
         </div>
 
         {/* Improvement Suggestions */}
-        <div className="space-y-2">
+        <div className="space-y-2" aria-label="Improvement Suggestions">
           <h3 className="font-semibold text-gray-800">🎯 Next Practice Focus:</h3>
           <ul className="space-y-1">
             {improvements.map((improvement, index) => (
               <li key={index} className="text-sm text-gray-600 flex items-start gap-2">
-                <span className="text-blue-500 mt-1">•</span>
+                <span className="text-blue-500 mt-1" aria-hidden="true">
+                  •
+                </span>
                 {improvement}
               </li>
             ))}
@@ -147,7 +138,7 @@ export default function ScoreCard({ performanceMetrics, overallScore, ranking, i
         </div>
 
         {/* Achievement Badges */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" aria-label="Achievement Badges">
           {performanceMetrics.averageArgumentQuality >= 8 && (
             <Badge variant="secondary" className="bg-blue-100 text-blue-800">
               🧠 Strong Arguments
