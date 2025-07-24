@@ -165,6 +165,14 @@ function generateStrategicFramework(role: string, context: DebateContext): Strat
   const isWhip = role === "GW" || role === "OW"
 
   switch (role) {
+    case "PM": // Added PM case
+      return {
+        caseTheory: generatePMCaseTheory(context),
+        burdens: ["Establish framework", "Present core arguments", "Demonstrate positive impacts"],
+        uniqueContributions: generatePMUniqueContributions(context),
+        clashPoints: identifyPMClashPoints(context),
+        extensions: [],
+      }
     case "LO":
       return {
         caseTheory: generateLOCaseTheory(context),
@@ -250,6 +258,8 @@ async function generateAuthenticSpeech(
   console.log(`Unique Contributions: ${framework.uniqueContributions.join(", ")}`)
 
   switch (role) {
+    case "PM": // Added PM case
+      return generatePMSpeech(context, framework)
     case "LO":
       return generateLOSpeech(context, framework)
     case "DPM":
@@ -268,6 +278,38 @@ async function generateAuthenticSpeech(
       return generateGenericSpeech(role, context)
   }
 }
+
+function generatePMSpeech(context: DebateContext, framework: StrategicFramework): string {
+  const { motion } = context;
+
+  // Meta-comment: PM must establish the government's framework and present initial arguments
+  const definitionAndFramework = generatePMDefinitionAndFramework(motion);
+  const governmentArguments = generatePMArguments(motion, context.userArguments, "PM");
+  const visionStatement = generatePMVisionStatement(motion);
+
+  return `Thank you, Chair. As Prime Minister, I rise to propose the motion: "${motion}".
+
+We believe that this motion is not just necessary, but profoundly beneficial for a multitude of reasons. Our case today will establish a clear framework for understanding this debate, and present compelling arguments for why you must affirm our proposal.
+
+**DEFINING THE MOTION AND OUR FRAMEWORK**
+
+${definitionAndFramework}
+
+**THE GOVERNMENT'S CASE: THREE CORE ARGUMENTS**
+
+Let me present our foundational arguments for this motion:
+
+${governmentArguments}
+
+**OUR VISION**
+
+${visionStatement}
+
+For these reasons, we proudly propose this motion and urge you to support it.
+
+Thank you.`;
+}
+
 
 function generateLOSpeech(context: DebateContext, framework: StrategicFramework): string {
   const { motion, userArguments, userSpeech } = context
@@ -631,6 +673,39 @@ function identifyPracticalWeaknesses(content: string): string[] {
 }
 
 // Strategic framework generators
+
+// Added PM strategic framework generators
+function generatePMCaseTheory(context: DebateContext): string {
+  const { motion } = context;
+  if (motion.toLowerCase().includes("ban")) {
+    return "Establish the necessity of the ban to mitigate a significant societal harm and outline a clear, enforceable mechanism.";
+  }
+  return "Establish the government's framework, define key terms, and present the core arguments for the motion's positive impact.";
+}
+
+function generatePMUniqueContributions(context: DebateContext): string[] {
+  return [
+    "Clear definition of the motion and its scope",
+    "Establishment of the government's core framework",
+    "Introduction of primary substantive arguments for the motion",
+  ];
+}
+
+function identifyPMClashPoints(context: DebateContext): string[] {
+  const clashes = ["Motion definition and scope", "Government framework validity", "Primary impacts of the policy"];
+
+  // Add potential clashes based on common argument types if the motion implies them
+  if (context.motion.toLowerCase().includes("economic") || context.motion.toLowerCase().includes("tax")) {
+    clashes.push("Economic efficiency vs. social equity");
+  }
+  if (context.motion.toLowerCase().includes("rights") || context.motion.toLowerCase().includes("freedom")) {
+    clashes.push("Individual rights vs. collective good");
+  }
+
+  return clashes;
+}
+
+
 function generateLOCaseTheory(context: DebateContext): string {
   const { motion, userArguments } = context
   if (motion.toLowerCase().includes("ban")) {
@@ -752,6 +827,48 @@ function identifyOWClashPoints(context: DebateContext): string[] {
 }
 
 // Content generators for speech sections
+
+// Updated PM helper functions
+function generatePMDefinitionAndFramework(motion: string): string {
+  if (motion.toLowerCase().includes("ban")) {
+    return "Our definition of this motion is clear: we propose a comprehensive prohibition on a specified activity or item. This will be achieved through a multi-pronged approach involving strict regulatory oversight and public awareness campaigns. Our framework prioritizes public safety and long-term societal well-being to ensure effective and equitable implementation.";
+  }
+  if (motion.toLowerCase().includes("subsidize")) {
+    return "This motion proposes a strategic investment in a particular sector through targeted subsidies designed to stimulate growth and foster innovation. Our framework for this debate centers on enhancing economic competitiveness and ensuring equitable access to vital resources through accountable public funding.";
+  }
+  return "We define this motion as a clear and necessary step towards progress. Our framework for evaluating this debate is based on principles of practical efficacy and positive societal impact, which we believe are essential for a fair and comprehensive assessment of its merits.";
+}
+
+function generatePMArguments(motion: string, userArguments: ArgumentAnalysis[], role: string): string {
+  let args = "";
+
+  // Argument 1: Economic Benefit
+  args += `\n**First Argument: Economic Prosperity and Growth**\n`;
+  args += `${generateArgumentMechanism("economic", motion, "government")}\n`;
+  args += `${generateArgumentEvidence("economic", motion, "government")}\n`;
+  args += `${generateArgumentImpact("economic", motion, "government")}\n`;
+
+  // Argument 2: Social/Rights Benefit (choose one based on motion or common sense)
+  const arg2Type = motion.toLowerCase().includes("rights") ? "rights" : "social";
+  args += `\n**Second Argument: ${generateArgumentTitle(arg2Type, motion, "government")}**\n`;
+  args += `${generateArgumentMechanism(arg2Type, motion, "government")}\n`;
+  args += `${generateArgumentEvidence(arg2Type, motion, "government")}\n`;
+  args += `${generateArgumentImpact(arg2Type, motion, "government")}\n`;
+
+  // Argument 3: Practicality/Feasibility
+  args += `\n**Third Argument: Practicality and Effective Implementation**\n`;
+  args += `${generateArgumentMechanism("practical", motion, "government")}\n`;
+  args += `${generateArgumentEvidence("practical", motion, "government")}\n`;
+  args += `${generateArgumentImpact("practical", motion, "government")}\n`;
+
+  return args;
+}
+
+function generatePMVisionStatement(motion: string): string {
+  return `Ultimately, our vision for this motion is a future where our communities are stronger, our economy is more dynamic, and individual well-being is enhanced. We believe this policy is a crucial step towards building a more resilient and equitable society.`;
+}
+
+
 function generateDefinitionalChallenge(motion: string, userArguments: ArgumentAnalysis[]): string {
   if (motion.toLowerCase().includes("ban")) {
     return "First, the Prime Minister has failed to clearly define the scope of this ban. What exactly constitutes a violation? How will enforcement work? These definitional gaps create arbitrary implementation that violates rule of law principles."
@@ -998,7 +1115,7 @@ function generateOOSupport(userArguments: ArgumentAnalysis[], role: string): str
   return "providing additional evidence for their core arguments and extending their analysis to new contexts that strengthen the opposition case."
 }
 
-function generateNewOppositionAngles(motion: string, userArguments: ArgumentAnalysis[], role: string): string {
+function generateNewOppositionAngles(motion: string, userArguments: ArgumentAnalysis[]): string {
   return `**New Opposition Angle: Cultural and Community Impact**
 
 This policy disrupts existing cultural practices and community structures that have evolved organically over generations, creating social fragmentation that cannot be easily repaired.`
